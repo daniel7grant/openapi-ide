@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "dev": "deno run -A --watch main.tsx"
+  },
+  "imports": {
+    "$hono/": "https://deno.land/x/hono@v3.12.0/",
+	"$yaml/": "https://deno.land/std@0.207.0/yaml/"
+  }
+}
