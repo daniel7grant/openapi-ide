@@ -15,7 +15,7 @@ const Layout: FC<LayoutProps> = ({ children, script }) => html`<!DOCTYPE html>
             />
         </head>
 
-        <body>
+        <body style="margin: 0">
             ${children}
             ${html`
                 <script>

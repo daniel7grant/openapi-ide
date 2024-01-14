@@ -1,25 +1,32 @@
 /* @jsx jsx */
 import { jsx, serveStatic } from '$hono/middleware.ts';
 import { Hono } from '$hono/mod.ts';
-import { generateApi } from 'npm:swagger-typescript-api@13.0.3';
+import { GenerateApiParamsFromSpecLiteral, generateApi } from 'swagger-typescript-api';
 import * as YAML from '$yaml/mod.ts';
 import Layout from './layout.tsx';
 
+const apis = [
+    { name: 'Deno', url: 'https://api.deno.com/v1/openapi.json' },
+    {
+        name: 'Gitea',
+        url: 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/gitea.io/1.20.0%2Bdev-539-g5e389228f/openapi.yaml',
+    },
+];
+
 const app = new Hono();
 
+type Spec = GenerateApiParamsFromSpecLiteral['spec'];
+
+const toCamelCase = (str: string): string =>
+    str.replace(/[-_][a-zA-Z]/g, (group) => group.slice(-1).toUpperCase());
+const defaultForType = (t: string): string => ({ string: '""', number: '0' }[t] ?? '');
+
 app.get('/main.js', async (c) => {
-    const specReq = await fetch(
-        'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/gitea.io/1.20.0%2Bdev-539-g5e389228f/openapi.yaml'
-    );
+    const apiUrl = c.req.query('api') ?? apis[0].url;
+    const specReq = await fetch(apiUrl);
     const specText = await specReq.text();
 
-    let spec;
-    if (specText.startsWith('{')) {
-        spec = JSON.parse(specText);
-    } else {
-        spec = YAML.parse(specText);
-    }
-
+    const spec: Spec = (specText.startsWith('{') ? JSON : YAML).parse(specText);
     const api = await generateApi({
         spec,
         output: './',
@@ -30,6 +37,25 @@ app.get('/main.js', async (c) => {
         silent: true,
         unwrapResponseData: true,
     });
+
+    const operations = Object.entries(spec.paths).flatMap(([path, methods]) =>
+        Object.entries(methods).map(([method, operation]) => [method, path, operation])
+    );
+
+    const exampleCall = operations
+        .filter(
+            ([, , operation]) =>
+                operation.requestBody === undefined && operation.operationId !== undefined
+        )
+        .toSorted(
+            ([, , op1], [, , op2]) => (op1.parameters ?? []).length - (op2.parameters ?? []).length
+        );
+
+    const ns = exampleCall[0][1].split('/')[1];
+    const operation = toCamelCase(exampleCall[0][2].operationId);
+    const parameters = (exampleCall[0][2].parameters ?? []).map(
+        (param: any) => param.example ?? defaultForType(param.schema.type)
+    );
 
     return c.text(
         `monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
@@ -48,22 +74,33 @@ const model = monaco.editor.createModel([
 		'',
 		'const api = new Api();',
 		'',
-		'const d = await api.domains.getDomain("");',
+		'const result = await api.${ns}.${operation}(${parameters.join(', ')});',
 	].join('\\n'), 'typescript', monaco.Uri.parse('file:///main.ts'));
 
-const editor = monaco.editor.create(document.getElementById('container'), { model });`,
-        200,
-        {
-            'Content-Type': 'text/javascript',
-        }
+const editor = monaco.editor.create(document.getElementById('container'), { model });`
     );
 });
 
 app.get('/', (c) => {
+    const api = c.req.query('api');
+
+    if (!api) {
+        return c.redirect(`/?api=${encodeURIComponent(apis[0].url)}`);
+    }
+
     return c.html(
-        <Layout script="./main.js">
-            <h2>Monaco Editor Sync Loading Sample</h2>
-            <div id="container" style="width: 800px; height: 600px; border: 1px solid grey"></div>
+        <Layout script={`./main.js?api=${encodeURIComponent(api)}`}>
+            <form method="GET" style="height: 2rem">
+                <select name="api">
+                    {apis.map(({ name, url }) => (
+                        <option value={url} selected={url === api}>
+                            {name}
+                        </option>
+                    ))}
+                </select>
+                <button type="submit">Go</button>
+            </form>
+            <div id="container" style="width: 100%; height: calc(100vh - 2rem)"></div>
         </Layout>
     );
 });

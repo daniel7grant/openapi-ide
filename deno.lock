@@ -2,6 +2,9 @@
   "version": "3",
   "packages": {
     "specifiers": {
+      "npm:@types/swagger-schema-official": "npm:@types/swagger-schema-official@2.0.22",
+      "npm:openapi-types": "npm:openapi-types@12.1.3",
+      "npm:swagger-schema-official": "npm:swagger-schema-official@2.0.0-bab6bed",
       "npm:swagger-typescript-api@13.0.3": "npm:swagger-typescript-api@13.0.3"
     },
     "npm": {
@@ -312,6 +315,10 @@
           "should": "should@13.2.3",
           "yaml": "yaml@1.10.2"
         }
+      },
+      "openapi-types@12.1.3": {
+        "integrity": "sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==",
+        "dependencies": {}
       },
       "parent-module@1.0.1": {
         "integrity": "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==",
