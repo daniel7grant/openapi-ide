@@ -52,7 +52,7 @@ export async function convertApiToTypes(spec: any): Promise<string> {
     return api.files[0].fileContent;
 }
 
-export function findExampleCall(spec: Spec): [string, string, string[]] {
+export function makeDefaultContent(spec: Spec): string {
     const operations = Object.entries(spec.paths ?? {}).flatMap(([path, methods = {}]) =>
         Object.entries(methods).map(
             ([method, operation]) =>
@@ -75,5 +75,13 @@ export function findExampleCall(spec: Spec): [string, string, string[]] {
         !('$ref' in param) ? defaultForParam(param) : '""'
     );
 
-    return [ns, operation, parameters];
+    const defaultCode = [
+        'import { Api } from "./api";',
+        '',
+        'const api = new Api();',
+        '',
+        `const result = await api.${ns}.${operation}(${parameters.join(',')});`,
+    ].join('\n');
+
+    return defaultCode;
 }

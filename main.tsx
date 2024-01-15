@@ -2,7 +2,7 @@
 import { jsx, serveStatic } from '$hono/middleware.ts';
 import { Hono } from '$hono/mod.ts';
 import Layout from './layout.tsx';
-import { findExampleCall } from './utils/openapi.ts';
+import { makeDefaultContent } from './utils/openapi.ts';
 import { convertApiToTypes, downloadApi } from './utils/openapi.ts';
 
 const apis = [
@@ -15,49 +15,37 @@ const apis = [
 
 const app = new Hono();
 
-app.get('/main.js', async (c) => {
+app.get('/editor', async (c) => {
     const apiUrl = c.req.query('api') ?? apis[0].url;
     const spec = await downloadApi(apiUrl);
     const ts = await convertApiToTypes(spec);
-    const [ns, operation, parameters] = findExampleCall(spec);
 
-    return c.text(
-        `monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-	target: monaco.languages.typescript.ScriptTarget.ES2015,
-	allowNonTsExtensions: true,
-	module: 99, // ESNext
-	target: 99, // ESNext
+    return c.text(ts);
 });
 
-const libSource = ${JSON.stringify(ts)};
-const libUri = 'file:///api.ts';
-monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
+app.get('/', async (c) => {
+    const apiUrl = c.req.query('api');
+    const code = c.req.query('code');
 
-const model = monaco.editor.createModel([
-		'import { Api } from "./api";',
-		'',
-		'const api = new Api();',
-		'',
-		'const result = await api.${ns}.${operation}(${parameters.join(', ')});',
-	].join('\\n'), 'typescript', monaco.Uri.parse('file:///main.ts'));
+    if (!apiUrl) {
+        const defaultApiUrl = apis[0].url;
+        return c.redirect(`/?api=${encodeURIComponent(defaultApiUrl)}`);
+    }
 
-const editor = monaco.editor.create(document.getElementById('container'), { model });`
-    );
-});
-
-app.get('/', (c) => {
-    const api = c.req.query('api');
-
-    if (!api) {
-        return c.redirect(`/?api=${encodeURIComponent(apis[0].url)}`);
+    if (!code) {
+        const spec = await downloadApi(apiUrl);
+        const content = makeDefaultContent(spec);
+        return c.redirect(
+            `/?api=${encodeURIComponent(apiUrl)}&code=${encodeURIComponent(btoa(content))}`
+        );
     }
 
     return c.html(
-        <Layout script={`./main.js?api=${encodeURIComponent(api)}`}>
+        <Layout>
             <form method="GET" style="height: 2rem">
                 <select name="api">
                     {apis.map(({ name, url }) => (
-                        <option value={url} selected={url === api}>
+                        <option value={url} selected={url === apiUrl}>
                             {name}
                         </option>
                     ))}

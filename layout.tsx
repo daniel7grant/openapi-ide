@@ -1,10 +1,6 @@
 import { FC, html } from '$hono/middleware.ts';
 
-interface LayoutProps {
-    script: string;
-}
-
-const Layout: FC<LayoutProps> = ({ children, script }) => html`<!DOCTYPE html>
+const Layout: FC = ({ children }) => html`<!DOCTYPE html>
     <html>
         <head>
             <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
@@ -26,7 +22,7 @@ const Layout: FC<LayoutProps> = ({ children, script }) => html`<!DOCTYPE html>
             <script src="/static/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
             <script src="/static/monaco-editor/min/vs/editor/editor.main.js"></script>
 
-            <script src="${script}"></script>
+            <script src="/static/main.js"></script>
         </body>
     </html> `;
 
