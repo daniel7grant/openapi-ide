@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run -A --watch main.tsx"
+    "dev": "deno run -A --watch --unstable main.tsx"
   },
   "imports": {
     "$hono/": "https://deno.land/x/hono@v3.12.0/",

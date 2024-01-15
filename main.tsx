@@ -1,9 +1,10 @@
+/// <reference lib="deno.unstable" />
 /* @jsx jsx */
 import { jsx, serveStatic } from '$hono/middleware.ts';
 import { Hono } from '$hono/mod.ts';
 import Layout from './layout.tsx';
 import { makeDefaultContent } from './utils/openapi.ts';
-import { convertApiToTypes, downloadApi } from './utils/openapi.ts';
+import { convertApiToTypes, downloadApiWithCache } from './utils/openapi.ts';
 
 const apis = [
     { name: 'Deno', url: 'https://api.deno.com/v1/openapi.json' },
@@ -13,11 +14,13 @@ const apis = [
     },
 ];
 
+const apiCache = await Deno.openKv();
+
 const app = new Hono();
 
 app.get('/editor', async (c) => {
     const apiUrl = c.req.query('api') ?? apis[0].url;
-    const spec = await downloadApi(apiUrl);
+    const spec = await downloadApiWithCache(apiCache, apiUrl);
     const ts = await convertApiToTypes(spec);
 
     return c.text(ts);
@@ -33,7 +36,7 @@ app.get('/', async (c) => {
     }
 
     if (!code) {
-        const spec = await downloadApi(apiUrl);
+        const spec = await downloadApiWithCache(apiCache, apiUrl);
         const content = makeDefaultContent(spec);
         return c.redirect(
             `/?api=${encodeURIComponent(apiUrl)}&code=${encodeURIComponent(btoa(content))}`
