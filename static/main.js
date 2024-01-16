@@ -32,16 +32,7 @@ addEventListener('DOMContentLoaded', async () => {
         editor.updateOptions({ readOnly: true });
         document.getElementById('message').innerText = 'Deploying to Deno Deploy...';
         try {
-            const envs = {};
-            const envsElement = document.getElementById('envs');
-            for (const child of envsElement.children) {
-                const key = child.querySelector('.key')?.value;
-                const value = child.querySelector('.value')?.value;
-                if (key && value) {
-                    envs[key] = value;
-                }
-            }
-
+            const envs = getEnvs();
             const result = await fetch(`/run`, {
                 method: 'post',
                 body: JSON.stringify({
@@ -59,7 +50,42 @@ addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    function duplicateInputs() {
+    function getEnvs() {
+        const envs = {};
+        const envsElement = document.getElementById('envs');
+        for (const child of envsElement.children) {
+            const key = child.querySelector('.key')?.value;
+            const value = child.querySelector('.value')?.value;
+            if (key && value) {
+                envs[key] = value;
+            }
+        }
+        return envs;
+    }
+
+    function loadFromStorage() {
+        const envsStr = localStorage.getItem('envs');
+        if (envsStr) {
+            const envs = JSON.parse(envsStr);
+
+            const envsElement = document.getElementById('envs');
+            const envContent = Object.entries(envs).map(([key, value]) => {
+                return `<div style="display: flex">
+					<input class="key" type="text" placeholder="Env key" value="${key}" />
+					<input class="value" type="text" placeholder="Env value" value="${value}" />
+				</div>`;
+            }).join('\n');
+
+			envsElement.innerHTML = envContent;
+        }
+    }
+
+	function saveToStorage() {
+		const envs = getEnvs();
+		localStorage.setItem('envs', JSON.stringify(envs));
+	}
+
+    function onInputChange() {
         const envsElement = document.getElementById('envs');
         const lastBlock = envsElement.children[envsElement.children.length - 1];
         const inputs = lastBlock.querySelectorAll('input');
@@ -67,15 +93,17 @@ addEventListener('DOMContentLoaded', async () => {
             const copy = lastBlock.cloneNode(true);
             copy.querySelectorAll('input').forEach((el) => {
                 el.value = '';
-                el.addEventListener('input', duplicateInputs);
+                el.addEventListener('input', onInputChange);
             });
             envsElement.appendChild(copy);
         }
+		saveToStorage();
     }
 
     document.querySelectorAll('#envs input').forEach((element) => {
-        element.addEventListener('input', duplicateInputs);
+        element.addEventListener('input', onInputChange);
     });
 
-	duplicateInputs();
+	loadFromStorage();
+    onInputChange();
 });
