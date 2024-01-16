@@ -39,6 +39,7 @@ export async function run(
     const imports = lines.filter((line) => line.startsWith('import '));
     const rest = lines.filter((line) => !line.startsWith('import '));
 
+	// Please add a script API, I'm begging you
     const serverFile = `${imports.join('\n').replaceAll(/from "\.\/api"/g, 'from "./api.ts"')}
 
 	let lines = [], error = false;
