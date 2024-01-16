@@ -29,12 +29,22 @@ addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('run-button').addEventListener('click', async () => {
-        const result = await fetch(
-            `/run?api=${encodeURIComponent(apiUrl)}&code=${btoa(editor.getValue())}`,
-            {
-                method: 'post',
-            }
-        ).then((p) => p.text());
-        console.log(result);
+        editor.updateOptions({ readOnly: true });
+		document.getElementById('status').innerText = 'Deploying to Deno Deploy...';
+        try {
+            const result = await fetch(
+                `/run?api=${encodeURIComponent(apiUrl)}&code=${btoa(editor.getValue())}`,
+                {
+                    method: 'post',
+                }
+            ).then((p) => p.text());
+            
+            document.getElementById('message').innerText = result;
+        } catch (err) {
+            document.getElementById('message').innerText = err.message;
+        } finally {
+			document.getElementById('status').innerText = '';
+            editor.updateOptions({ readOnly: false });
+        }
     });
 });

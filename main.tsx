@@ -24,15 +24,21 @@ app.post('/run', async (c) => {
     const spec = await downloadApiWithCache(apiCache, apiUrl);
     const apiCode = await convertApiToTypes(spec);
 
-    const rawCode = c.req.query('code');
-    if (!rawCode) {
+    const code = c.req.query('code');
+    if (!code) {
         return c.status(400);
     }
 
-    const code = atob(rawCode).replaceAll(/from "\.\/api"/g, 'from "./api.ts"');
-
-    const results = await run(code, apiCode);
-    return c.text(results);
+    try {
+        const results = await run(atob(code), apiCode);
+        return c.text(results);
+    } catch (err) {
+        if (err instanceof Error) {
+            return c.text(err.message, { status: 400 });
+        } else {
+            return c.text('Unknown error happened.', { status: 500 });
+        }
+    }
 });
 
 app.get('/editor', async (c) => {
@@ -62,7 +68,7 @@ app.get('/', async (c) => {
 
     return c.html(
         <Layout>
-            <div style="display: flex;height: 2rem; gap: 0.5rem;">
+            <div style="display: flex; height: 2rem; gap: 0.5rem;">
                 <form method="GET">
                     <select name="api">
                         {apis.map(({ name, url }) => (
@@ -73,13 +79,17 @@ app.get('/', async (c) => {
                     </select>
                     <button type="submit">Go</button>
                 </form>
-                <form method="POST" action="/run">
-                    <button id="run-button" type="button">
-                        Run
-                    </button>
-                </form>
             </div>
-            <div id="container" style="width: 100%; height: calc(100vh - 2rem)"></div>
+            <div id="container" style="width: 100%; height: calc(50vh - 2rem)"></div>
+            <div>
+				<div style="display: flex; align-items: center; height: 2rem; gap: 0.5rem;">
+					<button id="run-button" type="button">
+						Run
+					</button>
+					<span id="status"></span>
+				</div>
+                <pre id="message" style="white-space: pre-wrap; word-wrap: anywhere;"></pre>
+            </div>
         </Layout>
     );
 });
