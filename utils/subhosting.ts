@@ -89,7 +89,7 @@ export async function run(
     }
 
     if (!deployment.domains?.[0]) {
-        throw new Error("Deploying code failed.");
+        throw new Error("Deploying code failed, you probably have a syntax error somewhere.");
     }
     const logsReq = await fetch(`https://${deployment.domains[0]}`);
 	if (logsReq.status > 400) {
