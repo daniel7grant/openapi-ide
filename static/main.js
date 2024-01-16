@@ -15,6 +15,14 @@ addEventListener('DOMContentLoaded', async () => {
     const libUri = 'file:///api.ts';
     monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
 
+    const denoSource = await fetch(`/static/deno.lib.d.ts`).then((p) => p.text());
+    const denoUri = 'file:///deno.ts';
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        denoSource,
+        'typescript',
+        monaco.Uri.parse(denoUri)
+    );
+
     const model = monaco.editor.createModel(
         code,
         'typescript',
@@ -69,21 +77,23 @@ addEventListener('DOMContentLoaded', async () => {
             const envs = JSON.parse(envsStr);
 
             const envsElement = document.getElementById('envs');
-            const envContent = Object.entries(envs).map(([key, value]) => {
-                return `<div style="display: flex">
+            const envContent = Object.entries(envs)
+                .map(([key, value]) => {
+                    return `<div style="display: flex">
 					<input class="key" type="text" placeholder="Env key" value="${key}" />
 					<input class="value" type="text" placeholder="Env value" value="${value}" />
 				</div>`;
-            }).join('\n');
+                })
+                .join('\n');
 
-			envsElement.innerHTML = envContent;
+            envsElement.innerHTML = envContent;
         }
     }
 
-	function saveToStorage() {
-		const envs = getEnvs();
-		localStorage.setItem('envs', JSON.stringify(envs));
-	}
+    function saveToStorage() {
+        const envs = getEnvs();
+        localStorage.setItem('envs', JSON.stringify(envs));
+    }
 
     function onInputChange() {
         const envsElement = document.getElementById('envs');
@@ -97,13 +107,13 @@ addEventListener('DOMContentLoaded', async () => {
             });
             envsElement.appendChild(copy);
         }
-		saveToStorage();
+        saveToStorage();
     }
 
     document.querySelectorAll('#envs input').forEach((element) => {
         element.addEventListener('input', onInputChange);
     });
 
-	loadFromStorage();
+    loadFromStorage();
     onInputChange();
 });
