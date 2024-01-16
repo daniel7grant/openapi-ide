@@ -61,6 +61,7 @@ export async function convertApiToTypes(spec: any): Promise<string> {
         extractResponseBody: true,
         silent: true,
         unwrapResponseData: true,
+        generateUnionEnums: true,
     });
 
     return api.files[0].fileContent;

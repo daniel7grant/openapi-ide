@@ -25,8 +25,16 @@ addEventListener('DOMContentLoaded', async () => {
     editor.onDidChangeModelContent(() => {
         const url = new URL(location);
         url.searchParams.set('code', btoa(editor.getValue()));
-        history.pushState({}, "", url);
+        history.pushState({}, '', url);
     });
 
-    window.editor = editor;
+    document.getElementById('run-button').addEventListener('click', async () => {
+        const result = await fetch(
+            `/run?api=${encodeURIComponent(apiUrl)}&code=${btoa(editor.getValue())}`,
+            {
+                method: 'post',
+            }
+        ).then((p) => p.text());
+        console.log(result);
+    });
 });
