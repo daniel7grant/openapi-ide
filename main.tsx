@@ -20,17 +20,25 @@ const apiCache = await Deno.openKv();
 const app = new Hono();
 
 app.post('/run', async (c) => {
-    const apiUrl = c.req.query('api') ?? apis[0].url;
-    const spec = await downloadApiWithCache(apiCache, apiUrl);
+    const {
+        code,
+        api = apis[0].url,
+        envs = {},
+    } = await c.req.json<{
+        api?: string;
+        code?: string;
+        envs?: Record<string, string>;
+    }>();
+
+    const spec = await downloadApiWithCache(apiCache, api);
     const apiCode = await convertApiToTypes(spec);
 
-    const code = c.req.query('code');
     if (!code) {
         return c.status(400);
     }
 
     try {
-        const results = await run(atob(code), apiCode);
+        const results = await run(atob(code), apiCode, envs);
         return c.text(results);
     } catch (err) {
         if (err instanceof Error) {
@@ -82,12 +90,17 @@ app.get('/', async (c) => {
             </div>
             <div id="container" style="width: 100%; height: calc(50vh - 2rem)"></div>
             <div>
-				<div style="display: flex; align-items: center; height: 2rem; gap: 0.5rem;">
-					<button id="run-button" type="button">
-						Run
-					</button>
-					<span id="status"></span>
-				</div>
+                <div style="display: flex; align-items: center; height: 2rem; gap: 0.5rem;">
+                    <button id="run-button" type="button">
+                        Run
+                    </button>
+                </div>
+                <div id="envs">
+                    <div style="display: flex">
+                        <input class="key" type="text" placeholder="Env key" />
+                        <input class="value" type="text" placeholder="Env value" />
+                    </div>
+                </div>
                 <pre id="message" style="white-space: pre-wrap; word-wrap: anywhere;"></pre>
             </div>
         </Layout>

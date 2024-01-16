@@ -30,21 +30,52 @@ addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('run-button').addEventListener('click', async () => {
         editor.updateOptions({ readOnly: true });
-		document.getElementById('status').innerText = 'Deploying to Deno Deploy...';
+        document.getElementById('message').innerText = 'Deploying to Deno Deploy...';
         try {
-            const result = await fetch(
-                `/run?api=${encodeURIComponent(apiUrl)}&code=${btoa(editor.getValue())}`,
-                {
-                    method: 'post',
+            const envs = {};
+            const envsElement = document.getElementById('envs');
+            for (const child of envsElement.children) {
+                const key = child.querySelector('.key')?.value;
+                const value = child.querySelector('.value')?.value;
+                if (key && value) {
+                    envs[key] = value;
                 }
-            ).then((p) => p.text());
-            
+            }
+
+            const result = await fetch(`/run`, {
+                method: 'post',
+                body: JSON.stringify({
+                    api: apiUrl,
+                    code: btoa(editor.getValue()),
+                    envs,
+                }),
+            }).then((p) => p.text());
+
             document.getElementById('message').innerText = result;
         } catch (err) {
             document.getElementById('message').innerText = err.message;
         } finally {
-			document.getElementById('status').innerText = '';
             editor.updateOptions({ readOnly: false });
         }
     });
+
+    function duplicateInputs() {
+        const envsElement = document.getElementById('envs');
+        const lastBlock = envsElement.children[envsElement.children.length - 1];
+        const inputs = lastBlock.querySelectorAll('input');
+        if ([...inputs].some((i) => i.value !== '')) {
+            const copy = lastBlock.cloneNode(true);
+            copy.querySelectorAll('input').forEach((el) => {
+                el.value = '';
+                el.addEventListener('input', duplicateInputs);
+            });
+            envsElement.appendChild(copy);
+        }
+    }
+
+    document.querySelectorAll('#envs input').forEach((element) => {
+        element.addEventListener('input', duplicateInputs);
+    });
+
+	duplicateInputs();
 });
