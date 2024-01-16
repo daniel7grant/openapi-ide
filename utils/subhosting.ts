@@ -41,13 +41,17 @@ export async function run(
 
     const serverFile = `${imports.join('\n').replaceAll(/from "\.\/api"/g, 'from "./api.ts"')}
 
-	const lines = [];
+	let lines = [], error = false;
 	console.log = (line) => lines.push(line);
-	console.error = (line) => lines.push(line);
+	console.error = (line) => { lines.push(line); error = true; };
+	
+	try {
+		${rest.join('\n')};
+	} catch (err) {
+		console.error(err);
+	}
 
-	${rest.join('\n')}
-
-	Deno.serve({ onListen: () => {} }, () => {
+	Deno.serve({ onListen: () => {} }, async () => {
 		return new Response(
 			lines.map(
 				line => JSON.stringify(line)
@@ -83,13 +87,12 @@ export async function run(
         await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    if (deployment.status === 'failed') {
-        throw new Error('Running code failed.');
+    if (!deployment.domains?.[0]) {
+        throw new Error("Deploying code failed.");
     }
-    if (!deployment.domains) {
-        throw new Error("Couldn't reserve domain, try again later.");
-    }
-
-    const logs = await fetch(`https://${deployment.domains[0]}`).then((r) => r.text());
-    return logs;
+    const logsReq = await fetch(`https://${deployment.domains[0]}`);
+	if (logsReq.status > 400) {
+		throw new Error(`Request failed: ${await logsReq.text()}`);
+	}
+    return logsReq.text();
 }
