@@ -30,9 +30,12 @@ const defaultForParam = (param: OpenAPIV3_1.ParameterObject): string => {
 };
 
 export async function downloadApiWithCache(cache: Deno.Kv, url: string): Promise<Spec> {
-    const cachedSpec = await cache.get<Spec>([url]);
+	const cachedSpec = await cache.get<Spec>([url]);
     if (!cachedSpec.value) {
-        const spec = await downloadApi(url);
+		const specReq = await fetch(url);
+		const specText = await specReq.text();
+	
+		const spec = (specText.startsWith('{') ? JSON : YAML).parse(specText);
         try {
             await cache.set([url], spec);
         } catch {

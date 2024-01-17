@@ -11,25 +11,28 @@ function getEnvs() {
     return envs;
 }
 
-function loadFromStorage() {
-    const envsStr = localStorage.getItem('envs');
-    if (envsStr) {
-        const envs = JSON.parse(envsStr);
+function loadFromStorage(code) {
+    const envsStr = localStorage.getItem('envs') ?? '{}';
+    const envsElement = document.getElementById('envs');
 
-        const envsElement = document.getElementById('envs');
-        const envContent = Object.entries(envs)
-            .filter(([k, v]) => k || v)
-            .concat([['', '']])
-            .map(([key, value]) => {
-                return `<div style="display: flex">
-				<input class="key" type="text" placeholder="Env key" value="${key}" />
-				<input class="value" type="text" placeholder="Env value" value="${value}" />
-			</div>`;
-            })
-            .join('\n');
+    const codeEnvs = Object.fromEntries([...code.matchAll(/Deno\.env\.get\(["'](.*)["']\)/gm)].map((matches) => [
+        matches[1],
+        '',
+    ]));
 
-        envsElement.innerHTML = envContent;
-    }
+    const envs = JSON.parse(envsStr);
+
+    const envContent = Object.entries({ ...codeEnvs, ...envs })
+        .filter(([k, v]) => k || v)
+        .concat([['', '']])
+        .map(([key, value]) => {
+            return `<div style="display: flex">
+			<input class="key" type="text" placeholder="Env key" value="${key}" />
+			<input class="value" type="text" placeholder="Env value" value="${value}" />
+		</div>`;
+        })
+        .join('\n');
+    envsElement.innerHTML = envContent;
 }
 
 function saveToStorage() {
@@ -63,7 +66,7 @@ addEventListener('DOMContentLoaded', async () => {
         target: monaco.languages.typescript.ScriptTarget.ESNext,
     });
 
-    loadFromStorage();
+    loadFromStorage(code);
     onInputChange();
 
     document.querySelectorAll('#envs input').forEach((element) => {

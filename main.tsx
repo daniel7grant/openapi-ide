@@ -2,18 +2,11 @@
 /* @jsx jsx */
 import { jsx, serveStatic } from '$hono/middleware.ts';
 import { Hono } from '$hono/mod.ts';
+import { apis } from './utils/apis.ts';
 import Layout from './layout.tsx';
 import { makeDefaultContent } from './utils/openapi.ts';
 import { convertApiToTypes, downloadApiWithCache } from './utils/openapi.ts';
 import { run } from './utils/subhosting.ts';
-
-const apis = [
-    { name: 'Deno', url: 'https://api.deno.com/v1/openapi.json' },
-    {
-        name: 'Gitea',
-        url: 'https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/gitea.io/1.20.0%2Bdev-539-g5e389228f/openapi.yaml',
-    },
-];
 
 const apiCache = await Deno.openKv();
 
@@ -68,7 +61,8 @@ app.get('/', async (c) => {
 
     if (!code) {
         const spec = await downloadApiWithCache(apiCache, apiUrl);
-        const content = makeDefaultContent(spec);
+        const api = apis.find(({ url }) => url === apiUrl);
+        const content = api?.example ?? makeDefaultContent(spec);
         return c.redirect(
             `/?api=${encodeURIComponent(apiUrl)}&code=${encodeURIComponent(btoa(content))}`
         );
@@ -107,8 +101,8 @@ app.get('/', async (c) => {
                     </div>
                 </div>
                 <div style="width: 50%; height: 100vh; overflow-y: scroll;">
-					<div id="swagger-ui"></div>
-				</div>
+                    <div id="swagger-ui"></div>
+                </div>
             </div>
         </Layout>
     );
