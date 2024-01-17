@@ -76,32 +76,39 @@ app.get('/', async (c) => {
 
     return c.html(
         <Layout>
-            <div style="display: flex; height: 2rem; gap: 0.5rem;">
-                <form method="GET">
-                    <select name="api">
-                        {apis.map(({ name, url }) => (
-                            <option value={url} selected={url === apiUrl}>
-                                {name}
-                            </option>
-                        ))}
-                    </select>
-                    <button type="submit">Go</button>
-                </form>
-            </div>
-            <div id="container" style="width: 100%; height: calc(50vh - 2rem)"></div>
-            <div>
-                <div style="display: flex; align-items: center; height: 2rem; gap: 0.5rem;">
-                    <button id="run-button" type="button">
-                        Run
-                    </button>
-                </div>
-                <div id="envs">
-                    <div style="display: flex">
-                        <input class="key" type="text" placeholder="Env key" />
-                        <input class="value" type="text" placeholder="Env value" />
+            <div style="display: flex;">
+                <div style="width: 50%;">
+                    <div style="display: flex; height: 2rem; gap: 0.5rem;">
+                        <form method="GET">
+                            <select name="api">
+                                {apis.map(({ name, url }) => (
+                                    <option value={url} selected={url === apiUrl}>
+                                        {name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button type="submit">Go</button>
+                        </form>
+                    </div>
+                    <div id="container" style="width: 100%; height: calc(50vh - 2rem)"></div>
+                    <div>
+                        <div style="display: flex; align-items: center; height: 2rem; gap: 0.5rem;">
+                            <button id="run-button" type="button">
+                                Run
+                            </button>
+                        </div>
+                        <div id="envs">
+                            <div style="display: flex">
+                                <input class="key" type="text" placeholder="Env key" />
+                                <input class="value" type="text" placeholder="Env value" />
+                            </div>
+                        </div>
+                        <pre id="message" style="white-space: pre-wrap; word-wrap: anywhere;"></pre>
                     </div>
                 </div>
-                <pre id="message" style="white-space: pre-wrap; word-wrap: anywhere;"></pre>
+                <div style="width: 50%; height: 100vh; overflow-y: scroll;">
+					<div id="swagger-ui"></div>
+				</div>
             </div>
         </Layout>
     );

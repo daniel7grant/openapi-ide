@@ -36,6 +36,17 @@ addEventListener('DOMContentLoaded', async () => {
         history.pushState({}, '', url);
     });
 
+    const swagger = SwaggerUIBundle({
+        url: apiUrl,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis],
+        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        displayOperationId: true,
+        // requestSnippetsEnabled: true,
+        persistAuthorization: true,
+    });
+
     document.getElementById('run-button').addEventListener('click', async () => {
         editor.updateOptions({ readOnly: true });
         document.getElementById('message').innerText = 'Deploying to Deno Deploy...';
