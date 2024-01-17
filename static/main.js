@@ -89,6 +89,8 @@ addEventListener('DOMContentLoaded', async () => {
 
             const envsElement = document.getElementById('envs');
             const envContent = Object.entries(envs)
+                .filter(([k, v]) => k || v)
+                .concat([['', '']])
                 .map(([key, value]) => {
                     return `<div style="display: flex">
 					<input class="key" type="text" placeholder="Env key" value="${key}" />
@@ -109,24 +111,22 @@ addEventListener('DOMContentLoaded', async () => {
     function onInputChange() {
         const envsElement = document.getElementById('envs');
         const lastBlock = envsElement.children[envsElement.children.length - 1];
-        if (lastBlock) {
-            const inputs = lastBlock.querySelectorAll('input');
-            if ([...inputs].some((i) => i.value !== '')) {
-                const copy = lastBlock.cloneNode(true);
-                copy.querySelectorAll('input').forEach((el) => {
-                    el.value = '';
-                    el.addEventListener('input', onInputChange);
-                });
-                envsElement.appendChild(copy);
-            }
-            saveToStorage();
+        const inputs = lastBlock.querySelectorAll('input');
+        if ([...inputs].some((i) => i.value !== '')) {
+            const copy = lastBlock.cloneNode(true);
+            copy.querySelectorAll('input').forEach((el) => {
+                el.value = '';
+                el.addEventListener('input', onInputChange);
+            });
+            envsElement.appendChild(copy);
         }
+        saveToStorage();
     }
+
+    loadFromStorage();
+	onInputChange();
 
     document.querySelectorAll('#envs input').forEach((element) => {
         element.addEventListener('input', onInputChange);
     });
-
-    loadFromStorage();
-    onInputChange();
 });
