@@ -54,7 +54,7 @@ export async function downloadApi(url: string): Promise<Spec> {
 export async function convertApiToTypes(spec: any): Promise<string> {
     const api = await generateApi({
         spec: spec,
-        output: './',
+        output: false,
         name: 'Api',
         extractEnums: true,
         extractRequestBody: true,
