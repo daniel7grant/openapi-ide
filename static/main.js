@@ -98,16 +98,18 @@ addEventListener('DOMContentLoaded', async () => {
     function onInputChange() {
         const envsElement = document.getElementById('envs');
         const lastBlock = envsElement.children[envsElement.children.length - 1];
-        const inputs = lastBlock.querySelectorAll('input');
-        if ([...inputs].some((i) => i.value !== '')) {
-            const copy = lastBlock.cloneNode(true);
-            copy.querySelectorAll('input').forEach((el) => {
-                el.value = '';
-                el.addEventListener('input', onInputChange);
-            });
-            envsElement.appendChild(copy);
+        if (lastBlock) {
+            const inputs = lastBlock.querySelectorAll('input');
+            if ([...inputs].some((i) => i.value !== '')) {
+                const copy = lastBlock.cloneNode(true);
+                copy.querySelectorAll('input').forEach((el) => {
+                    el.value = '';
+                    el.addEventListener('input', onInputChange);
+                });
+                envsElement.appendChild(copy);
+            }
+            saveToStorage();
         }
-        saveToStorage();
     }
 
     document.querySelectorAll('#envs input').forEach((element) => {
