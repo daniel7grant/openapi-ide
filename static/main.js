@@ -1,3 +1,57 @@
+function getEnvs() {
+    const envs = {};
+    const envsElement = document.getElementById('envs');
+    for (const child of envsElement.children) {
+        const key = child.querySelector('.key')?.value;
+        const value = child.querySelector('.value')?.value;
+        if (key && value) {
+            envs[key] = value;
+        }
+    }
+    return envs;
+}
+
+function loadFromStorage() {
+    const envsStr = localStorage.getItem('envs');
+    if (envsStr) {
+        const envs = JSON.parse(envsStr);
+
+        const envsElement = document.getElementById('envs');
+        const envContent = Object.entries(envs)
+            .filter(([k, v]) => k || v)
+            .concat([['', '']])
+            .map(([key, value]) => {
+                return `<div style="display: flex">
+				<input class="key" type="text" placeholder="Env key" value="${key}" />
+				<input class="value" type="text" placeholder="Env value" value="${value}" />
+			</div>`;
+            })
+            .join('\n');
+
+        envsElement.innerHTML = envContent;
+    }
+}
+
+function saveToStorage() {
+    const envs = getEnvs();
+    localStorage.setItem('envs', JSON.stringify(envs));
+}
+
+function onInputChange() {
+    const envsElement = document.getElementById('envs');
+    const lastBlock = envsElement.children[envsElement.children.length - 1];
+    const inputs = lastBlock.querySelectorAll('input');
+    if ([...inputs].some((i) => i.value !== '')) {
+        const copy = lastBlock.cloneNode(true);
+        copy.querySelectorAll('input').forEach((el) => {
+            el.value = '';
+            el.addEventListener('input', onInputChange);
+        });
+        envsElement.appendChild(copy);
+    }
+    saveToStorage();
+}
+
 addEventListener('DOMContentLoaded', async () => {
     const { searchParams } = new URL(location);
     const apiUrl = searchParams.get('api');
@@ -7,6 +61,24 @@ addEventListener('DOMContentLoaded', async () => {
         allowNonTsExtensions: true,
         module: monaco.languages.typescript.ModuleKind.ESNext,
         target: monaco.languages.typescript.ScriptTarget.ESNext,
+    });
+
+    loadFromStorage();
+    onInputChange();
+
+    document.querySelectorAll('#envs input').forEach((element) => {
+        element.addEventListener('input', onInputChange);
+    });
+
+    const swagger = SwaggerUIBundle({
+        url: apiUrl,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis],
+        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        displayOperationId: true,
+        // requestSnippetsEnabled: true,
+        persistAuthorization: true,
     });
 
     const libSource = await fetch(`/editor?api=${encodeURIComponent(apiUrl)}`).then((p) =>
@@ -36,17 +108,6 @@ addEventListener('DOMContentLoaded', async () => {
         history.pushState({}, '', url);
     });
 
-    const swagger = SwaggerUIBundle({
-        url: apiUrl,
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [SwaggerUIBundle.presets.apis],
-        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
-        displayOperationId: true,
-        // requestSnippetsEnabled: true,
-        persistAuthorization: true,
-    });
-
     document.getElementById('run-button').addEventListener('click', async () => {
         editor.updateOptions({ readOnly: true });
         document.getElementById('message').innerText = 'Deploying to Deno Deploy...';
@@ -67,66 +128,5 @@ addEventListener('DOMContentLoaded', async () => {
         } finally {
             editor.updateOptions({ readOnly: false });
         }
-    });
-
-    function getEnvs() {
-        const envs = {};
-        const envsElement = document.getElementById('envs');
-        for (const child of envsElement.children) {
-            const key = child.querySelector('.key')?.value;
-            const value = child.querySelector('.value')?.value;
-            if (key && value) {
-                envs[key] = value;
-            }
-        }
-        return envs;
-    }
-
-    function loadFromStorage() {
-        const envsStr = localStorage.getItem('envs');
-        if (envsStr) {
-            const envs = JSON.parse(envsStr);
-
-            const envsElement = document.getElementById('envs');
-            const envContent = Object.entries(envs)
-                .filter(([k, v]) => k || v)
-                .concat([['', '']])
-                .map(([key, value]) => {
-                    return `<div style="display: flex">
-					<input class="key" type="text" placeholder="Env key" value="${key}" />
-					<input class="value" type="text" placeholder="Env value" value="${value}" />
-				</div>`;
-                })
-                .join('\n');
-
-            envsElement.innerHTML = envContent;
-        }
-    }
-
-    function saveToStorage() {
-        const envs = getEnvs();
-        localStorage.setItem('envs', JSON.stringify(envs));
-    }
-
-    function onInputChange() {
-        const envsElement = document.getElementById('envs');
-        const lastBlock = envsElement.children[envsElement.children.length - 1];
-        const inputs = lastBlock.querySelectorAll('input');
-        if ([...inputs].some((i) => i.value !== '')) {
-            const copy = lastBlock.cloneNode(true);
-            copy.querySelectorAll('input').forEach((el) => {
-                el.value = '';
-                el.addEventListener('input', onInputChange);
-            });
-            envsElement.appendChild(copy);
-        }
-        saveToStorage();
-    }
-
-    loadFromStorage();
-	onInputChange();
-
-    document.querySelectorAll('#envs input').forEach((element) => {
-        element.addEventListener('input', onInputChange);
     });
 });
