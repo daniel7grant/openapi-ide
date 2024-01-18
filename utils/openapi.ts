@@ -100,6 +100,8 @@ export function makeDefaultContent(spec: Spec): string {
         '',
         `const result = await api.${ns}.${operation}(${parameters.join(',')});`,
         '',
+        'console.log(result);',
+        '',
     ].join('\n');
 
     return defaultCode;

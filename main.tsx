@@ -50,18 +50,27 @@ app.get('/editor', async (c) => {
     return c.text(apiCode);
 });
 
+const defaultApiUrl = apis[0].url;
 app.get('/', async (c) => {
-    const apiUrl = c.req.query('api');
+    const apiUrls = c.req.queries('api');
     const code = c.req.query('code');
 
-    if (!apiUrl) {
-        const defaultApiUrl = apis[0].url;
+    if (!apiUrls?.length) {
         return c.redirect(`/?api=${encodeURIComponent(defaultApiUrl)}`);
     }
 
+    if (apiUrls.length > 1) {
+        return c.redirect(`/?api=${encodeURIComponent(apiUrls[apiUrls.length - 1])}`);
+    }
+
+    const apiUrl = apiUrls[0];
+    if (!URL.canParse(apiUrl)) {
+        return c.redirect(`/?api=${encodeURIComponent(defaultApiUrl)}`);
+    }
+
+    const api = apis.find(({ url }) => url === apiUrl);
     if (!code) {
         const spec = await downloadApiWithCache(apiCache, apiUrl);
-        const api = apis.find(({ url }) => url === apiUrl);
         const content = api?.example ?? makeDefaultContent(spec);
         return c.redirect(
             `/?api=${encodeURIComponent(apiUrl)}&code=${encodeURIComponent(btoa(content))}`
@@ -72,17 +81,27 @@ app.get('/', async (c) => {
         <Layout>
             <div style="display: flex;">
                 <div style="width: 50%;">
-                    <div style="display: flex; height: 2rem; gap: 0.5rem;">
+                    <div style="display: flex; height: 2rem; align-items: center; gap: 0.5rem;">
+                        <div>OpenAPI config:</div>
                         <form method="GET">
-                            <select name="api">
+                            <select id="api-select" name="api">
                                 {apis.map(({ name, url }) => (
                                     <option value={url} selected={url === apiUrl}>
                                         {name}
                                     </option>
                                 ))}
                             </select>
+                            <input
+							 	id="api-input"
+                                type="text"
+                                name="api"
+                                placeholder="or your own OpenAPI"
+                                style="margin: 0 0.25rem"
+                                value={api ? '' : apiUrl}
+                            />
                             <button type="submit">Go</button>
                         </form>
+                        <button id="share">Share</button>
                     </div>
                     <div id="container" style="width: 100%; height: calc(50vh - 2rem)"></div>
                     <div>

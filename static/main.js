@@ -15,10 +15,9 @@ function loadFromStorage(code) {
     const envsStr = localStorage.getItem('envs') ?? '{}';
     const envsElement = document.getElementById('envs');
 
-    const codeEnvs = Object.fromEntries([...code.matchAll(/Deno\.env\.get\(["'](.*)["']\)/gm)].map((matches) => [
-        matches[1],
-        '',
-    ]));
+    const codeEnvs = Object.fromEntries(
+        [...code.matchAll(/Deno\.env\.get\(["'](.*)["']\)/gm)].map((matches) => [matches[1], ''])
+    );
 
     const envs = JSON.parse(envsStr);
 
@@ -53,6 +52,16 @@ function onInputChange() {
         envsElement.appendChild(copy);
     }
     saveToStorage();
+}
+
+function copyFromClipboard(value) {
+    const input = document.createElement('input');
+    input.style = 'position: absolute; left: -1000px; top: -1000px';
+    input.value = value;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
 }
 
 addEventListener('DOMContentLoaded', async () => {
@@ -131,5 +140,14 @@ addEventListener('DOMContentLoaded', async () => {
         } finally {
             editor.updateOptions({ readOnly: false });
         }
+    });
+
+    document.getElementById('share').addEventListener('click', () => {
+        copyFromClipboard(location.href);
+        alert('Copied URL to clipboard.');
+    });
+
+    document.getElementById('api-select').addEventListener('change', () => {
+        document.getElementById('api-input').value = '';
     });
 });
